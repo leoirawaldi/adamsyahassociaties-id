@@ -45,8 +45,8 @@ Website ini dikembangkan dengan beberapa spesifikasi:
 1. Buka browser Anda
 2. Ketik alamat http://websitekamu.com
 3. Untuk Login ke halaman Back End, silakan buka http://websitekamu.com/login
-4. Username: javawebmedia
-5. Password: javawebmedia
+4. Username: admin
+5. Password: Systemroot.123###
 
 # CodeIgniter 4 Framework
 

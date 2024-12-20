@@ -136,4 +136,30 @@ class Berita extends BaseController
         ];
         echo view('layout/wrapper', $data);
     }
+        // layanan
+        public function layanan($slug_berita)
+        {
+            $m_konfigurasi = new Konfigurasi_model();
+            $m_berita      = new Berita_model();
+            $m_komentar    = new Komentar_model();
+            $konfigurasi   = $m_konfigurasi->listing();
+            $berita        = $m_berita->read($slug_berita);
+            $komentar      = $m_komentar->getKomentarByBerita($berita['id_berita']);
+    
+            // Update hits
+            $data = ['id_berita' => $berita['id_berita'],
+                'hits'           => $berita['hits'] + 1,
+            ];
+            $m_berita->edit($data);
+            // Update hits
+    
+            $data = ['title'  => $berita['judul_berita'],
+                'description' => $berita['judul_berita'],
+                'keywords'    => $berita['judul_berita'],
+                'berita'      => $berita,
+                'komentar'    => $komentar,
+                'content'     => 'berita/layanan',
+            ];
+            echo view('layout/wrapper', $data);
+        }
 }

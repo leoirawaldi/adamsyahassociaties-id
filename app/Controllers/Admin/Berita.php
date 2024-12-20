@@ -174,6 +174,7 @@ class Berita extends BaseController
         $m_berita   = new Berita_model();
         $kategori   = $m_kategori->listing();
         $berita     = $m_berita->detail($id_berita);
+    
         // Start validasi
         if ($this->request->getMethod() === 'post' && $this->validate(
             [
@@ -184,17 +185,32 @@ class Berita extends BaseController
                 ],
             ]
         )) {
-            if (! empty($_FILES['gambar']['name'])) {
-                // Image upload
+            // Jika pengguna mengunggah gambar baru
+            if (!empty($_FILES['gambar']['name'])) {
+                // Path gambar lama
+                $oldImage = WRITEPATH . '../assets/upload/image/' . $berita['gambar'];
+                $oldThumb = WRITEPATH . '../assets/upload/image/thumbs/' . $berita['gambar'];
+    
+                // Hapus gambar lama jika ada
+                if (!empty($berita['gambar']) && file_exists($oldImage)) {
+                    unlink($oldImage);
+                }
+                if (!empty($berita['gambar']) && file_exists($oldThumb)) {
+                    unlink($oldThumb);
+                }
+    
+                // Proses unggah gambar baru
                 $avatar   = $this->request->getFile('gambar');
                 $namabaru = str_replace(' ', '-', $avatar->getName());
                 $avatar->move(WRITEPATH . '../assets/upload/image/', $namabaru);
-                // Create thumb
+    
+                // Buat thumbnail
                 $image = \Config\Services::image()
                     ->withFile(WRITEPATH . '../assets/upload/image/' . $namabaru)
                     ->fit(100, 100, 'center')
                     ->save(WRITEPATH . '../assets/upload/image/thumbs/' . $namabaru);
-                // masuk database
+    
+                // Data untuk update termasuk gambar baru
                 $data = [
                     'id_berita'       => $id_berita,
                     'id_user'         => $this->session->get('id_user'),
@@ -210,29 +226,29 @@ class Berita extends BaseController
                     'gambar'          => $namabaru,
                     'tanggal_publish' => date('Y-m-d', strtotime($this->request->getVar('tanggal_publish'))) . ' ' . date('H:i', strtotime($this->request->getVar('jam'))),
                 ];
-                $m_berita->edit($data);
-
-                return redirect()->to(base_url('admin/berita/jenis_berita/' . $this->request->getVar('jenis_berita')))->with('sukses', 'Data Berhasil di Simpan');
+            } else {
+                // Data untuk update tanpa mengganti gambar
+                $data = [
+                    'id_berita'       => $id_berita,
+                    'id_user'         => $this->session->get('id_user'),
+                    'id_kategori'     => $this->request->getVar('id_kategori'),
+                    'slug_berita'     => strtolower(url_title($this->request->getVar('judul_berita'))),
+                    'judul_berita'    => $this->request->getVar('judul_berita'),
+                    'ringkasan'       => $this->request->getVar('ringkasan'),
+                    'isi'             => $this->request->getVar('isi'),
+                    'status_berita'   => $this->request->getVar('status_berita'),
+                    'jenis_berita'    => $this->request->getVar('jenis_berita'),
+                    'keywords'        => $this->request->getVar('keywords'),
+                    'icon'            => $this->request->getVar('icon'),
+                    'tanggal_publish' => date('Y-m-d', strtotime($this->request->getVar('tanggal_publish'))) . ' ' . date('H:i', strtotime($this->request->getVar('jam'))),
+                ];
             }
-            $data = [
-                'id_berita'       => $id_berita,
-                'id_user'         => $this->session->get('id_user'),
-                'id_kategori'     => $this->request->getVar('id_kategori'),
-                'slug_berita'     => strtolower(url_title($this->request->getVar('judul_berita'))),
-                'judul_berita'    => $this->request->getVar('judul_berita'),
-                'ringkasan'       => $this->request->getVar('ringkasan'),
-                'isi'             => $this->request->getVar('isi'),
-                'status_berita'   => $this->request->getVar('status_berita'),
-                'jenis_berita'    => $this->request->getVar('jenis_berita'),
-                'keywords'        => $this->request->getVar('keywords'),
-                'icon'            => $this->request->getVar('icon'),
-                'tanggal_publish' => date('Y-m-d', strtotime($this->request->getVar('tanggal_publish'))) . ' ' . date('H:i', strtotime($this->request->getVar('jam'))),
-            ];
+    
             $m_berita->edit($data);
-
+    
             return redirect()->to(base_url('admin/berita/jenis_berita/' . $this->request->getVar('jenis_berita')))->with('sukses', 'Data Berhasil di Simpan');
         }
-
+    
         $data = ['title' => 'Edit Berita: ' . $berita['judul_berita'],
             'kategori'   => $kategori,
             'berita'     => $berita,
@@ -240,17 +256,42 @@ class Berita extends BaseController
         ];
         echo view('admin/layout/wrapper', $data);
     }
+    
 
     // Delete
-    public function delete($id_berita)
-    {
-        checklogin();
-        $m_berita = new Berita_model();
-        $data     = ['id_berita' => $id_berita];
-        $m_berita->delete($data);
-        // masuk database
-        $this->session->setFlashdata('sukses', 'Data telah dihapus');
+// Delete
+public function delete($id_berita)
+{
+    checklogin();
+    $m_berita = new Berita_model();
 
-        return redirect()->to(base_url('admin/berita'));
+    // Ambil detail berita
+    $berita = $m_berita->detail($id_berita);
+
+    if ($berita) {
+        // Hapus gambar jika ada
+        if (!empty($berita['gambar'])) {
+            $gambar_path = WRITEPATH . '../assets/upload/image/' . $berita['gambar'];
+            $thumb_path = WRITEPATH . '../assets/upload/image/thumbs/' . $berita['gambar'];
+
+            if (file_exists($gambar_path)) {
+                unlink($gambar_path); // Hapus file gambar utama
+            }
+            if (file_exists($thumb_path)) {
+                unlink($thumb_path); // Hapus file thumbnail
+            }
+        }
+
+        // Hapus data dari database
+        $m_berita->delete(['id_berita' => $id_berita]);
+
+        // Berikan pesan sukses
+        $this->session->setFlashdata('sukses', 'Data telah dihapus');
+    } else {
+        $this->session->setFlashdata('error', 'Data tidak ditemukan');
     }
+
+    return redirect()->to(base_url('admin/berita'));
+}
+
 }

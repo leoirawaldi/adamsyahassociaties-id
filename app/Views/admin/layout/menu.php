@@ -42,6 +42,12 @@ $site        = $konfigurasi->listing();
           </li>
           <!-- Berita -->
           <li class="nav-item">
+            <a href="<?= base_url('admin/adminkomentar') ?>" class="nav-link">
+              <i class="nav-icon fas fa-comment"></i>
+              <p>Komentar</p>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-newspaper"></i>
               <p>Berita, Profil &amp; Layanan

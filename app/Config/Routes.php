@@ -22,6 +22,7 @@ $routes->setDefaultMethod('index');
 $routes->setTranslateURIDashes(false);
 $routes->set404Override();
 $routes->setAutoRoute(true);
+$routes->post('admin/adminkomentar/reply/(:num)', 'Admin\Adminkomentar::reply/$1');
 
 /*
  * --------------------------------------------------------------------

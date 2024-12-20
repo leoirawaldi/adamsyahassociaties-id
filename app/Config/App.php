@@ -23,7 +23,7 @@ class App extends BaseConfig
      *
      * @var string
      */
-    public $baseURL = 'http://localhost/compro-codeigniter-4/';
+    public $baseURL = '';
 
     /**
      * --------------------------------------------------------------------------
